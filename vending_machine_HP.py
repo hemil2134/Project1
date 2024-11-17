@@ -1,24 +1,16 @@
-#!/usr/bin/env python3
+'''
+TPRG 2131 Fall 2024 Project 1
+Nov, 2024
+Hemil Prajapati (100942152).
+This program is strictly my own work. Any material
+beyond course learning materials that is taken from
+the Web or other sources is properly cited, giving.
+credit to the original author(s).
+'''
 
-# STUDENT version for Project 1.
-# TPRG2131 Fall 202x
-# Updated Phil J (Fall 202x)
-# 
-# Louis Bertrand
-# Oct 4, 2021 - initial version
-# Nov 17, 2022 - Updated for Fall 2022.
-# 
-
-# PySimpleGUI recipes used:
-#
-# Persistent GUI example
-# https://pysimplegui.readthedocs.io/en/latest/cookbook/#recipe-pattern-2a-persistent-window-multiple-reads-using-an-event-loop
-#
-# Asynchronous Window With Periodic Update
-# https://pysimplegui.readthedocs.io/en/latest/cookbook/#asynchronous-window-with-periodic-update
 
 import PySimpleGUI as sg
-
+from time import sleep
 
 # Hardware interface module
 # Button basic recipe: *** define the pin you used
@@ -28,7 +20,9 @@ import PySimpleGUI as sg
 #Where am I?
 hardware_present = False
 try:
-    #*** define the pin you used
+    from gpiozero import Button, Servo
+    servo = Servo(21)
+    key1 = Button(5)
     hardware_present = True
 except ModuleNotFoundError:
     print("Not on a Raspberry Pi or gpiozero not installed.")
@@ -50,15 +44,25 @@ def log(s):
 # For testing purposes, output is to stdout, also ensure use of Docstring, in class
 class VendingMachine(object):
     
-    PRODUCTS = {"suprise": ("SURPRISE", 5),
+    PRODUCTS = {
+                  
+                "KIT KAT":  ("KIT KAT", 25),  # Example of using single letter keys
+                "CANDY":   ("CANDY", 50),
+                "WATER BOTTLE":   ("WATER BOTTLE", 100),
+                "CANADA DRY":   ("CANADA DRY", 150),
+                "CHIPS": ("CHIPS",175)
 
                 }
 
     # List of coins: each tuple is ("VALUE", value in cents)
-    COINS = {"5": ("5", 5),
+    COINS = {
+             "$2": ("$2", 200),  # Example of using an integer as the key
+             "$1": ("$1", 100),  # The other buttons use string keys
+             "25\u00A2": ("25\u00A2", 25),
+             "10\u00A2": ("10\u00A2", 10),
+             "5\u00A2": ("5\u00A2", 5)           
 
             }
-
 
     def __init__(self):
         self.state = None  # current state
@@ -144,7 +148,7 @@ class AddCoinsState(State):
 class DeliverProductState(State):
     _NAME = "deliver_product"
     def on_entry(self, machine):
-        # Deliver the product and change state
+        
         machine.change_due = machine.amount - machine.PRODUCTS[machine.event][1]
         machine.amount = 0
         print("Buzz... Whir... Click...", machine.PRODUCTS[machine.event][0])
@@ -152,6 +156,11 @@ class DeliverProductState(State):
             machine.go_to_state('count_change')
         else:
             machine.go_to_state('waiting')
+        if hardware_present:
+            servo.min()
+            sleep(0.5)
+            servo.max()
+            sleep(2)
 
 # Count out the change in coins 
 class CountChangeState(State):
@@ -231,4 +240,5 @@ if __name__ == "__main__":
         vending.update()
 
     window.close()
-    print("Normal exit")
+    print("Thank you, Have a great day...")
+
